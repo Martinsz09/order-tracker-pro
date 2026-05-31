@@ -1,10 +1,8 @@
-# Base PHP com Apache
 FROM php:8.2-apache
 
-# Evitar interação do apt
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Atualizar e instalar dependências do sistema
+# Instalar dependências de sistema
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -14,6 +12,9 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libpq-dev \
     build-essential \
+    pkg-config \
+    libicu-dev \
+    zlib1g-dev \
     && docker-php-ext-install \
         pdo \
         pdo_pgsql \
@@ -23,25 +24,24 @@ RUN apt-get update && apt-get install -y \
         tokenizer \
         ctype \
         json \
+        intl \
     && a2enmod rewrite \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Instalar Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Definir diretório de trabalho
 WORKDIR /var/www/html
 
-# Copiar arquivos do projeto
 COPY . .
 
-# Dar permissão para Laravel
+# Permissões corretas
 RUN chown -R www-data:www-data storage bootstrap/cache
 
-# Instalar dependências PHP via Composer
+# Instalar dependências do PHP
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Configurar Apache para apontar para /public
+# Configurar Apache para /public
 RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|' /etc/apache2/sites-available/000-default.conf
 
 EXPOSE 80
