@@ -1,19 +1,22 @@
 FROM php:8.2-apache
 
-# Instala dependências do sistema
+# Evita prompts durante instalação
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Instala pacotes essenciais
 RUN apt-get update && apt-get install -y \
-    libpq-dev \
     git \
     unzip \
     curl \
     libzip-dev \
     libxml2-dev \
     zlib1g-dev \
-    && docker-php-ext-install pdo pdo_pgsql mbstring tokenizer xml ctype json zip \
-    && docker-php-ext-enable pdo_pgsql
-
-# Ativa mod_rewrite
-RUN a2enmod rewrite
+    libonig-dev \
+    libpq-dev \
+    build-essential \
+    && docker-php-ext-install pdo pdo_pgsql mbstring tokenizer xml zip \
+    && docker-php-ext-enable pdo_pgsql \
+    && a2enmod rewrite
 
 # Define diretório de trabalho
 WORKDIR /var/www/html
@@ -26,7 +29,7 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 # Copia todo o projeto
 COPY . .
 
-# Permissões
+# Permissões corretas
 RUN chown -R www-data:www-data storage bootstrap/cache
 
 # Limpeza do Laravel
