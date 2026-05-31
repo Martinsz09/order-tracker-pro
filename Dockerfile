@@ -2,7 +2,6 @@ FROM php:8.2-apache
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Dependências do sistema
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -11,30 +10,24 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     libonig-dev \
     libpq-dev \
-    && docker-php-ext-install \
-        pdo \
-        pdo_pgsql \
-        mbstring \
-        xml \
-        zip \
+    && docker-php-ext-install pdo pdo_pgsql mbstring xml zip \
     && a2enmod rewrite
 
-# Composer
+# Composer direto da imagem oficial
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copia primeiro só deps (cache Docker)
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-interaction || true
-
-# Depois o projeto inteiro
+# Copia tudo primeiro (IMPORTANTE)
 COPY . .
+
+# Instala dependências PHP (AGORA funciona porque o código já existe)
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Permissões Laravel
 RUN chown -R www-data:www-data storage bootstrap/cache
 
-# Apache aponta pro public do Laravel (IMPORTANTE)
+# Apache apontando para /public
 RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
 
 EXPOSE 80
