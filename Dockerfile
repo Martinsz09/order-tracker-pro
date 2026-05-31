@@ -1,8 +1,8 @@
-FROM php:8.2-apache
+FROM php:8.3-apache
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# 1. Instalar apenas o essencial para rodar o Laravel + Postgres
+# 1. Instalar apenas o essencial para rodar o Laravel + Postgres (Atualizado para PHP 8.3)
 RUN apt-get update && apt-get install -y \
     libzip-dev \
     libxml2-dev \
@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /var/www/html
 
-# 2. Copia o projeto INTEIRO de uma vez (incluindo a pasta vendor que você vai gerar localmente)
+# 2. Copia o projeto INTEIRO de uma vez (com a pasta vendor inclusa)
 COPY . .
 
 # 3. Permissões necessárias para o Laravel funcionar
