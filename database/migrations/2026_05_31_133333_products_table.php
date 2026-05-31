@@ -3,36 +3,40 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
+    /**
+     * Don't wrap this migration in a transaction
+     */
+    public $withinTransaction = false;
+
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        Schema::create('orders', function (Blueprint $table) {
-            $table->id();
-            
-            // Relacionamento 1:N (Chave Estrangeira do Usuário)
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            
-            // Dados informativos do pacote
-            $table->string('product_name');
-            $table->string('tracking_code')->unique();
-            
-            // Endereços textuais digitados pelo usuário
-            $table->string('origin_address');
-            $table->string('destination_address');
-            
-            // Coordenadas calculadas pela API
-            $table->double('latitude_origem', 10, 6)->nullable();
-            $table->double('longitude_origem', 10, 6)->nullable();
-            $table->double('latitude_destino', 10, 6)->nullable();
-            $table->double('longitude_destino', 10, 6)->nullable();
-            
-            $table->timestamps();
-        });
+        DB::statement('
+            CREATE TABLE orders (
+                id BIGSERIAL PRIMARY KEY,
+                user_id BIGINT NOT NULL,
+                product_name VARCHAR(255) NOT NULL,
+                tracking_code VARCHAR(255) NOT NULL UNIQUE,
+                origin_address VARCHAR(255) NOT NULL,
+                destination_address VARCHAR(255) NOT NULL,
+                latitude_origem DECIMAL(10, 6),
+                longitude_origem DECIMAL(10, 6),
+                latitude_destino DECIMAL(10, 6),
+                longitude_destino DECIMAL(10, 6),
+                created_at TIMESTAMP NULL,
+                updated_at TIMESTAMP NULL,
+                CONSTRAINT orders_user_id_foreign FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        ');
+
+        DB::statement('CREATE INDEX orders_user_id_index ON orders(user_id)');
+        DB::statement('CREATE INDEX orders_tracking_code_unique ON orders(tracking_code)');
     }
 
     /**
@@ -40,6 +44,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('orders');
+        DB::statement('DROP TABLE IF EXISTS orders CASCADE');
     }
 };

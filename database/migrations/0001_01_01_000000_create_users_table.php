@@ -3,38 +3,61 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
+    /**
+     * Don't wrap this migration in a transaction
+     */
+    public $withinTransaction = false;
+
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
-            $table->rememberToken();
-            $table->timestamps();
-        });
+        // Create users table without unique constraint
+        DB::statement('
+            CREATE TABLE users (
+                id BIGSERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                email VARCHAR(255) NOT NULL,
+                email_verified_at TIMESTAMP NULL,
+                password VARCHAR(255) NOT NULL,
+                remember_token VARCHAR(100),
+                created_at TIMESTAMP NULL,
+                updated_at TIMESTAMP NULL
+            )
+        ');
 
-        Schema::create('password_reset_tokens', function (Blueprint $table) {
-            $table->string('email')->primary();
-            $table->string('token');
-            $table->timestamp('created_at')->nullable();
-        });
+        // Add unique constraint separately
+        DB::statement('ALTER TABLE users ADD CONSTRAINT users_email_unique UNIQUE(email)');
 
-        Schema::create('sessions', function (Blueprint $table) {
-            $table->string('id')->primary();
-            $table->foreignId('user_id')->nullable()->index();
-            $table->string('ip_address', 45)->nullable();
-            $table->text('user_agent')->nullable();
-            $table->longText('payload');
-            $table->integer('last_activity')->index();
-        });
+        // Create password_reset_tokens table
+        DB::statement('
+            CREATE TABLE password_reset_tokens (
+                email VARCHAR(255) PRIMARY KEY,
+                token VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP NULL
+            )
+        ');
+
+        // Create sessions table
+        DB::statement('
+            CREATE TABLE sessions (
+                id VARCHAR(255) PRIMARY KEY,
+                user_id BIGINT,
+                ip_address VARCHAR(45),
+                user_agent TEXT,
+                payload TEXT NOT NULL,
+                last_activity INTEGER NOT NULL
+            )
+        ');
+
+        // Create indexes
+        DB::statement('CREATE INDEX sessions_user_id_index ON sessions(user_id)');
+        DB::statement('CREATE INDEX sessions_last_activity_index ON sessions(last_activity)');
     }
 
     /**
